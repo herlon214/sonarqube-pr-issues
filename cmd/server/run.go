@@ -19,9 +19,10 @@ import (
 )
 
 var RunCmd = &cobra.Command{
-	Use:   "run",
-	Short: "Starts the webhook server",
-	Run:   Run,
+	Use:              "run",
+	Short:            "Starts the webhook server",
+	Run:              Run,
+	TraverseChildren: true,
 }
 
 func Run(cmd *cobra.Command, args []string) {
@@ -29,9 +30,8 @@ func Run(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 
 	// Environment
-	port := os.Getenv("PORT")
-	if port == "" {
-		logrus.Panicln("PORT is required")
+	if serverPort <= 0 {
+		logrus.Panicln("A valid --port is required")
 
 		return
 	}
@@ -67,8 +67,8 @@ func Run(cmd *cobra.Command, args []string) {
 	// Listen
 	http.HandleFunc("/webhook", WebhookHandler(webhookSecret, sonar, gh))
 
-	logrus.Infoln("Listening on port", port)
-	if err := http.ListenAndServe(fmt.Sprintf(":%s", port), nil); err != nil {
+	logrus.Infoln("Listening on port", serverPort)
+	if err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil); err != nil {
 		panic(err)
 	}
 }
