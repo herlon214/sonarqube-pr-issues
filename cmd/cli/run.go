@@ -1,19 +1,26 @@
-package main
+package cli
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"github.com/herlon214/sonarqube-pr-issues/scm"
+	"github.com/herlon214/sonarqube-pr-issues/sonarqube"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"os"
 	"time"
-
-	"github.com/sirupsen/logrus"
-
-	"github.com/herlon214/sonarqube-pr-issues/sonarqube"
 )
 
-func main() {
+var RunCmd = &cobra.Command{
+	Use:              "run",
+	Short:            "Process the given project and branch",
+	Run:              Run,
+	TraverseChildren: true,
+}
+
+func Run(cmd *cobra.Command, args []string) {
+	logrus.Infoln("Processing", project, "->", branch)
+
 	// Environment
 	ghToken := os.Getenv("GH_TOKEN")
 	apiKey := os.Getenv("SONAR_API_KEY")
@@ -29,14 +36,7 @@ func main() {
 		return
 	}
 
-	// Flags
-	project := flag.String("project", "my-project", "Sonarqube project name")
-	branch := flag.String("branch", "my-branch", "SCM Branch name")
-	publishReview := flag.Bool("publish", false, "Publish review")
-	markAsPublished := flag.Bool("markaspublished", true, "Mark the issue as published to avoid sending it again")
-	flag.Parse()
-
-	if project == nil || *project == "" || branch == nil || *branch == "" {
+	if project == "" || branch == "" {
 		logrus.Panicln("Project / branch can't be empty")
 
 		return
@@ -50,29 +50,34 @@ func main() {
 	sonar := sonarqube.New(sonarRootURL, apiKey)
 
 	// Find PR
-	pr, err := sonar.FindPRForBranch(*project, *branch)
+	pr, err := sonar.FindPRForBranch(project, branch)
 	if err != nil {
-		logrus.WithError(err).Panicln("Failed to find PR for the given branch:", *branch)
+		logrus.WithError(err).Panicln("Failed to find PR for the given branch:", branch)
 
 		return
 	}
 
 	// List issues
-	issues, err := sonar.ListIssuesForPR(*project, pr.Key)
+	issues, err := sonar.ListIssuesForPR(project, pr.Key)
 	if err != nil {
-		logrus.WithError(err).Panicln("Failed to find PR for the given PR:", pr.Key)
+		logrus.WithError(err).Panicln("Failed to list issues for the given PR:", pr.Key)
 
 		return
 	}
 
 	// Filter issues
 	issues = issues.FilterByStatus("OPEN").FilterOutByTag(sonarqube.TAG_PUBLISHED)
+	if len(issues.Issues) == 0 {
+		logrus.Infoln("No issues found!")
+
+		return
+	}
 
 	// Print issues
 	printIssues(sonar, issues.Issues)
 
 	// Check if should publish the review
-	if *publishReview {
+	if publishReview {
 		// Check if token is set
 		if ghToken == "" {
 			logrus.Panicln("GH_TOKEN environment variable is missing")
@@ -94,7 +99,7 @@ func main() {
 		logrus.Infoln("Issues review published!")
 
 		// Check if should update the issues
-		if *markAsPublished {
+		if markAsPublished {
 			bulkActionRes, err := sonar.TagIssues(issues.Issues, sonarqube.TAG_PUBLISHED)
 			if err != nil {
 				logrus.WithError(err).Panicln("Failed to mark issues as published")

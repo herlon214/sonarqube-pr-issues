@@ -1,8 +1,11 @@
 package sonarqube
 
-type WebhookInput struct {
+type WebhookData struct {
 	Status  string `json:"status"`
 	Project struct {
 		Key string `json:"key"`
-	}
+	} `json:"project"`
+	Branch struct {
+		Name string `json:"name"`
+	} `json:"branch"`
 }

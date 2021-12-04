@@ -12,5 +12,4 @@ func TestParsePullRequestUrl(t *testing.T) {
 
 	assert.Equal(t, "herlon214", ghPath.Owner)
 	assert.Equal(t, "sonarqube-pr-issues", ghPath.Repo)
-
 }

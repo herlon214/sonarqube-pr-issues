@@ -12,15 +12,23 @@ First of all you need to setup the environment variables:
 SONAR_API_KEY=SONAR_API_TOKEN
 GH_TOKEN=GITHUB_API_TOKEN
 SONAR_ROOT_URL=https://sonar-url-without-trailing-slash
-WEBHOOK_SECRET=my-hook-secret
-PORT=8080
+WEBHOOK_SECRET=my-hook-secret # Not necessary if CLI
+PORT=8080 # Not necessary if CLI
 ```
-There are currently two options to use this project:
+There are currently two ways to use this project:
+
+### Webhook
+To use the webhook you need to start the server by running:
+```shell
+$ sqpr
+```
 
 ### CLI
+This option is mostly to test, ideally you should use the webhook.
+
 To use in the command line you can see the available flags by running `sqpr --help` (or `go run cmd/cli/main.go`):
 ```
-$ sqpr --help
+$ sqpr -server --help
 
 Usage of sqpr:
   -branch string
@@ -76,8 +84,6 @@ INFO[0000] 0 issues ignored
 INFO[0000] 0 issues failed                              
 INFO[0000] --------------------------  
 ```
-
-### Webhook
 
 [doc-img]: http://img.shields.io/badge/GoDoc-Reference-blue.svg
 [doc]: https://godoc.org/go.uber.org/fx
