@@ -3,7 +3,8 @@ before:
   hooks:
     - go mod tidy
 builds:
-  - env:
+  - binary: sqpr
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
@@ -23,7 +24,9 @@ snapshot:
 changelog:
   skip: true
 dockers:
-  - image_templates:
+  - goos: linux
+    goarch: amd64
+    image_templates:
       - "herlon214/sonarqube-pr-issues:latest"
       - "herlon214/sonarqube-pr-issues:{{ .Tag }}"
       - "herlon214/sonarqube-pr-issues:v{{ .Major }}"
