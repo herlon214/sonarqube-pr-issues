@@ -2,12 +2,24 @@ package sonarqube
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 )
+
+const (
+	TAG_PUBLISHED = "published"
+)
+
+type BulkActionResponse struct {
+	Total    int `json:"total"`
+	Success  int `json:"success"`
+	Ignored  int `json:"ignored"`
+	Failures int `json:"failures"`
+}
 
 type Sonarqube struct {
 	Root   string
@@ -112,4 +124,44 @@ func (s *Sonarqube) ListIssuesForPR(project string, prNumber string) (*Issues, e
 	}
 
 	return &data, nil
+}
+
+// TagIssues adds a given tag into the given issues
+func (s *Sonarqube) TagIssues(issues []Issue, tags string) (*BulkActionResponse, error) {
+	issueKeys := make([]string, 0)
+	for _, issue := range issues {
+		issueKeys = append(issueKeys, issue.Key)
+	}
+
+	// Request URL
+	params := fmt.Sprintf("issues=%s&add_tags=%s&do_transition=setinreview", strings.Join(issueKeys, ","), tags)
+
+	// Create a new request
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/api/issues/bulk_change?%s", s.Root, params), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// Auth
+	req.SetBasicAuth(s.ApiKey, "")
+
+	// Execute request
+	res, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read body
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to read tag issues response")
+	}
+
+	var bulkRes BulkActionResponse
+	err = json.Unmarshal(body, &bulkRes)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to unmarshal tag issues response")
+	}
+
+	return &bulkRes, nil
 }

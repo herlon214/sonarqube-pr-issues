@@ -5,7 +5,7 @@ type Issues struct {
 }
 
 // FilterByStatus filters the issues by the given status
-func (i Issues) FilterByStatus(status string) Issues {
+func (i Issues) FilterByStatus(status string) *Issues {
 	filtered := make([]Issue, 0)
 	for _, issue := range i.Issues {
 		if issue.Status == status {
@@ -13,11 +13,11 @@ func (i Issues) FilterByStatus(status string) Issues {
 		}
 	}
 
-	return Issues{Issues: filtered}
+	return &Issues{Issues: filtered}
 }
 
 // FilterOutByTag filters out the issues that contains the given tag
-func (i Issues) FilterOutByTag(tag string) Issues {
+func (i Issues) FilterOutByTag(tag string) *Issues {
 	filtered := make([]Issue, 0)
 
 	for _, issue := range i.Issues {
@@ -33,5 +33,5 @@ func (i Issues) FilterOutByTag(tag string) Issues {
 		}
 	}
 
-	return Issues{Issues: filtered}
+	return &Issues{Issues: filtered}
 }
