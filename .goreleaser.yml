@@ -26,5 +26,4 @@ dockers:
   - image_templates:
       - "herlon214/sonarqube-pr-issues:latest"
       - "herlon214/sonarqube-pr-issues:{{ .Tag }}"
-      - "herlon214/sonarqube-pr-issues:{{ .Tag }}-{{ .Env.GO_VERSION }}"
       - "herlon214/sonarqube-pr-issues:v{{ .Major }}"
