@@ -1,5 +1,7 @@
 FROM alpine:3.14
 
-ENTRYPOINT [ "/sqpr" ]
+COPY sqpr /
 EXPOSE 8080
+
+ENTRYPOINT [ "/sqpr" ]
 CMD [ "server", "run", "--port", "8080" ]
