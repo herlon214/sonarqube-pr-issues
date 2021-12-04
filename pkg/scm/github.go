@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 	"golang.org/x/oauth2"
 
-	"github.com/herlon214/sonarqube-pr-issues/sonarqube"
+	"github.com/herlon214/sonarqube-pr-issues/pkg/sonarqube"
 )
 
 type Github struct {

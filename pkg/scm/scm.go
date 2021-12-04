@@ -2,7 +2,8 @@ package scm
 
 import (
 	"context"
-	"github.com/herlon214/sonarqube-pr-issues/sonarqube"
+
+	"github.com/herlon214/sonarqube-pr-issues/pkg/sonarqube"
 )
 
 type SCM interface {
