@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	scm2 "github.com/herlon214/sonarqube-pr-issues/pkg/scm"
+	sonarqube2 "github.com/herlon214/sonarqube-pr-issues/pkg/sonarqube"
 	"io"
 	"net/http"
 	"os"
@@ -14,9 +16,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-
-	"github.com/herlon214/sonarqube-pr-issues/scm"
-	"github.com/herlon214/sonarqube-pr-issues/sonarqube"
 )
 
 var RunCmd = &cobra.Command{
@@ -62,8 +61,8 @@ func Run(cmd *cobra.Command, args []string) {
 	}
 
 	// Sonarqube
-	sonar := sonarqube.New(sonarRootURL, apiKey)
-	var gh scm.SCM = scm.NewGithub(ctx, sonar, ghToken)
+	sonar := sonarqube2.New(sonarRootURL, apiKey)
+	var gh scm2.SCM = scm2.NewGithub(ctx, sonar, ghToken)
 
 	// Listen
 	http.HandleFunc("/webhook", WebhookHandler(webhookSecret, sonar, gh))
@@ -74,7 +73,7 @@ func Run(cmd *cobra.Command, args []string) {
 	}
 }
 
-func WebhookHandler(webhookSecret string, sonar *sonarqube.Sonarqube, gh scm.SCM) http.HandlerFunc {
+func WebhookHandler(webhookSecret string, sonar *sonarqube2.Sonarqube, gh scm2.SCM) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		// Read webhook secret
 		reqSecret := req.Header.Get("X-Sonar-Webhook-HMAC-SHA256")
@@ -109,7 +108,7 @@ func WebhookHandler(webhookSecret string, sonar *sonarqube.Sonarqube, gh scm.SCM
 		}
 
 		// Unmarshal data
-		var webhook sonarqube.WebhookData
+		var webhook sonarqube2.WebhookData
 		err = json.Unmarshal(body, &webhook)
 		if err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -132,7 +131,7 @@ func WebhookHandler(webhookSecret string, sonar *sonarqube.Sonarqube, gh scm.SCM
 }
 
 // PublishIssues publishes the issues in the PR for the given project branch
-func PublishIssues(ctx context.Context, sonar *sonarqube.Sonarqube, projectScm scm.SCM, project string, branch string) error {
+func PublishIssues(ctx context.Context, sonar *sonarqube2.Sonarqube, projectScm scm2.SCM, project string, branch string) error {
 	// Find PR
 	pr, err := sonar.FindPRForBranch(project, branch)
 	if err != nil {
@@ -146,7 +145,7 @@ func PublishIssues(ctx context.Context, sonar *sonarqube.Sonarqube, projectScm s
 	}
 
 	// Filter issues
-	issues = issues.FilterByStatus("OPEN").FilterOutByTag(sonarqube.TAG_PUBLISHED)
+	issues = issues.FilterByStatus("OPEN").FilterOutByTag(sonarqube2.TAG_PUBLISHED)
 
 	// No issues found
 	if len(issues.Issues) == 0 {
@@ -160,7 +159,7 @@ func PublishIssues(ctx context.Context, sonar *sonarqube.Sonarqube, projectScm s
 	}
 
 	// Tag published issues
-	bulkActionRes, err := sonar.TagIssues(issues.Issues, sonarqube.TAG_PUBLISHED)
+	bulkActionRes, err := sonar.TagIssues(issues.Issues, sonarqube2.TAG_PUBLISHED)
 	if err != nil {
 		return errors.Wrap(err, "failed to mark issues as published")
 	}

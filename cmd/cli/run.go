@@ -3,8 +3,8 @@ package cli
 import (
 	"context"
 	"fmt"
-	"github.com/herlon214/sonarqube-pr-issues/scm"
-	"github.com/herlon214/sonarqube-pr-issues/sonarqube"
+	scm2 "github.com/herlon214/sonarqube-pr-issues/pkg/scm"
+	sonarqube2 "github.com/herlon214/sonarqube-pr-issues/pkg/sonarqube"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
@@ -47,7 +47,7 @@ func Run(cmd *cobra.Command, args []string) {
 	defer cancel()
 
 	// Sonarqube
-	sonar := sonarqube.New(sonarRootURL, apiKey)
+	sonar := sonarqube2.New(sonarRootURL, apiKey)
 
 	// Find PR
 	pr, err := sonar.FindPRForBranch(project, branch)
@@ -66,7 +66,7 @@ func Run(cmd *cobra.Command, args []string) {
 	}
 
 	// Filter issues
-	issues = issues.FilterByStatus("OPEN").FilterOutByTag(sonarqube.TAG_PUBLISHED)
+	issues = issues.FilterByStatus("OPEN").FilterOutByTag(sonarqube2.TAG_PUBLISHED)
 	if len(issues.Issues) == 0 {
 		logrus.Infoln("No issues found!")
 
@@ -86,7 +86,7 @@ func Run(cmd *cobra.Command, args []string) {
 		}
 
 		// Setup GitHub SCM
-		var gh scm.SCM = scm.NewGithub(ctx, sonar, ghToken)
+		var gh scm2.SCM = scm2.NewGithub(ctx, sonar, ghToken)
 
 		// Publish review
 		err = gh.PublishIssuesReviewFor(ctx, issues.Issues, pr)
@@ -97,29 +97,28 @@ func Run(cmd *cobra.Command, args []string) {
 		}
 
 		logrus.Infoln("Issues review published!")
+	}
 
-		// Check if should update the issues
-		if markAsPublished {
-			bulkActionRes, err := sonar.TagIssues(issues.Issues, sonarqube.TAG_PUBLISHED)
-			if err != nil {
-				logrus.WithError(err).Panicln("Failed to mark issues as published")
+	// Check if should update the issues
+	if markAsPublished {
+		bulkActionRes, err := sonar.TagIssues(issues.Issues, sonarqube2.TAG_PUBLISHED)
+		if err != nil {
+			logrus.WithError(err).Panicln("Failed to mark issues as published")
 
-				return
-			}
-
-			logrus.Infoln("--------------------------")
-			logrus.Infoln("Mark as published result:")
-			logrus.Infoln(bulkActionRes.Success, "issues marked")
-			logrus.Infoln(bulkActionRes.Ignored, "issues ignored")
-			logrus.Infoln(bulkActionRes.Failures, "issues failed")
-			logrus.Infoln("--------------------------")
+			return
 		}
 
+		logrus.Infoln("--------------------------")
+		logrus.Infoln("Mark as published result:")
+		logrus.Infoln(bulkActionRes.Success, "issues marked")
+		logrus.Infoln(bulkActionRes.Ignored, "issues ignored")
+		logrus.Infoln(bulkActionRes.Failures, "issues failed")
+		logrus.Infoln("--------------------------")
 	}
 
 }
 
-func printIssues(sonar *sonarqube.Sonarqube, issues []sonarqube.Issue) {
+func printIssues(sonar *sonarqube2.Sonarqube, issues []sonarqube2.Issue) {
 	for _, issue := range issues {
 		logrus.Infof(fmt.Sprintf("[%s] %s: %s L%d:\n\t- %s\n", issue.Status, issue.Type, issue.FilePath(), issue.Line, issue.MarkdownMessage(sonar.Root)))
 	}
