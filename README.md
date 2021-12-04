@@ -106,8 +106,8 @@ INFO[0000] --------------------------
 [ci-img]: https://github.com/uber-go/fx/actions/workflows/go.yml/badge.svg
 [ci]: https://github.com/uber-go/fx/actions/workflows/go.yml
 
-[cov-img]: https://codecov.io/gh/uber-go/fx/branch/master/graph/badge.svg
-[cov]: https://codecov.io/gh/uber-go/fx/branch/master
+[cov-img]: https://codecov.io/gh/herlon214/sonarqube-pr-issues/branch/main/graph/badge.svg?token=q5lsK8I3It
+[cov]: https://codecov.io/gh/herlon214/sonarqube-pr-issues/branch/main
 
 [report-card-img]: https://goreportcard.com/badge/github.com/herlon214/sonarqube-pr-issues
 [report-card]: https://goreportcard.com/report/github.com/herlon214/sonarqube-pr-issues
