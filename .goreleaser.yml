@@ -1,3 +1,4 @@
+project_name: sqpr
 before:
   hooks:
     - go mod tidy
