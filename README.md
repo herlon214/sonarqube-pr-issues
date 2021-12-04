@@ -101,10 +101,10 @@ INFO[0000] --------------------------
 ```
 
 [doc-img]: http://img.shields.io/badge/GoDoc-Reference-blue.svg
-[doc]: https://godoc.org/go.uber.org/fx
+[doc]: github.com/herlon214/sonarqube-pr-issues
 
-[ci-img]: https://github.com/uber-go/fx/actions/workflows/go.yml/badge.svg
-[ci]: https://github.com/uber-go/fx/actions/workflows/go.yml
+[ci-img]: https://github.com/herlon214/sonarqube-pr-issues/actions/workflows/ci.yml/badge.svg
+[ci]: https://github.com/herlon214/sonarqube-pr-issues/actions/workflows/ci.yml
 
 [cov-img]: https://codecov.io/gh/herlon214/sonarqube-pr-issues/branch/main/graph/badge.svg?token=q5lsK8I3It
 [cov]: https://codecov.io/gh/herlon214/sonarqube-pr-issues/branch/main
