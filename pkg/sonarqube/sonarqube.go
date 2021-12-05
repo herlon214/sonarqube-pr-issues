@@ -3,11 +3,12 @@ package sonarqube
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"io"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -43,9 +44,10 @@ func New(root string, apiKey string) *Sonarqube {
 	}
 }
 
-func (s *Sonarqube) ProjectPullRequests(project string) (*ProjectPullRequests, error) {
+// ProjectPullRequests reads all the PRs for the given project ID
+func (s *Sonarqube) ProjectPullRequests(projectId string) (*ProjectPullRequests, error) {
 	// Create a new request
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/project_pull_requests/list?project=%s", s.Root, project), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("%s/api/project_pull_requests/list?project=%s", s.Root, projectId), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -156,6 +158,8 @@ func (s *Sonarqube) TagIssues(issues []Issue, tags string) (*BulkActionResponse,
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read tag issues response")
 	}
+
+	fmt.Println(string(body))
 
 	var bulkRes BulkActionResponse
 	err = json.Unmarshal(body, &bulkRes)
