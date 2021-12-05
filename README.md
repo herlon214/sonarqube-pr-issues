@@ -3,6 +3,9 @@
 
 Simple Webhook for Sonarqube which publishes the issues found in the PR as review requesting changes.
 
+
+![Review screenshot](assets/review_screenshot.png) 
+
 The only SCM that is available for now is GitHub, feel free to open a PR if you want to add others.
 
 ```shell
@@ -65,7 +68,7 @@ INFO[0000] Listening on port 8080
 
 Now you can add the Webhook into the Sonarqube admin panel using the the `/webhook` endpoint:
 
-![Webhook demo](assets/webhook_screenshot.png) 
+![Webhook screenshot](assets/webhook_screenshot.png) 
 
 [!] The **secret** here needs to match the env var `WEBHOOK_SECRET`.
 
