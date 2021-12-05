@@ -34,7 +34,10 @@ SONAR_ROOT_URL=https://sonar-url-without-trailing-slash
 WEBHOOK_SECRET=my-hook-secret # Not necessary if CLI
 ```
 
-There are currently two ways to use this project:
+To generate a new Sonarqube API Key you can navigate to [https://your-sonar-url/account/security/](https://your-sonar-url/account/security/).
+
+It's possible to use binary directly (check the releases page) OR using the docker container (more info below).
+
 
 ### Webhook
 To see the list of all available commands in the server mode run with the `--help` flag:
@@ -58,6 +61,32 @@ Start running the webservice by executing:
 ```shell
 $ sqpr server run
 INFO[0000] Listening on port 8080  
+```
+
+Now you can add the Webhook into the Sonarqube admin panel using the the `/webhook` endpoint:
+
+![Webhook demo](assets/webhook_screenshot.png) 
+
+[!] The **secret** here needs to match the env var `WEBHOOK_SECRET`.
+
+### Using docker
+You can also use the docker image instead of running the binary manually:
+
+```yaml
+// docker-compose.yml
+version: "3"
+
+services:
+  webhook:
+    image: herlon214/sonarqube-pr-issues:v0.1.6 # Check the latest version
+    restart: always
+    environment:
+      SONAR_API_KEY: my-sonar-api-key
+      GH_TOKEN: my-github-token
+      SONAR_ROOT_URL: https://sonar-url-without-trailing-slash
+      WEBHOOK_SECRET: my-hook-secret
+    ports:
+      - 8080
 ```
 
 ### CLI
