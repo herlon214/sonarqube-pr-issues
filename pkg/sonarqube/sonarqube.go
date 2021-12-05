@@ -159,8 +159,6 @@ func (s *Sonarqube) TagIssues(issues []Issue, tags string) (*BulkActionResponse,
 		return nil, errors.Wrap(err, "failed to read tag issues response")
 	}
 
-	fmt.Println(string(body))
-
 	var bulkRes BulkActionResponse
 	err = json.Unmarshal(body, &bulkRes)
 	if err != nil {
