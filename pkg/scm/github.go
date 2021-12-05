@@ -84,10 +84,12 @@ func (g *Github) PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.
 	}
 
 	// Create the review
-	_, _, err = g.client.PullRequests.CreateReview(ctx, ghPath.Owner, ghPath.Repo, prNumber, reviewRequest)
+	out, res, err := g.client.PullRequests.CreateReview(ctx, ghPath.Owner, ghPath.Repo, prNumber, reviewRequest)
 	if err != nil {
-		return errors.Wrap(err, "failed to create draft review")
+		return errors.Wrap(err, "failed to create review")
 	}
+
+	fmt.Println(out, res)
 
 	return nil
 }
