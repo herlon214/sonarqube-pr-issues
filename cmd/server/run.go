@@ -7,15 +7,16 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/avast/retry-go"
 	scm2 "github.com/herlon214/sonarqube-pr-issues/pkg/scm"
 	sonarqube2 "github.com/herlon214/sonarqube-pr-issues/pkg/sonarqube"
-	"io"
-	"net/http"
-	"os"
-
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"io"
+	"net/http"
+	"os"
+	"time"
 )
 
 var RunCmd = &cobra.Command{
@@ -118,8 +119,10 @@ func WebhookHandler(webhookSecret string, sonar *sonarqube2.Sonarqube, gh scm2.S
 
 		logrus.Infoln("Processing", webhook.Project.Key, "->", webhook.Branch.Name)
 
-		// Process the event
-		err = PublishIssues(req.Context(), sonar, gh, webhook.Project.Key, webhook.Branch.Name)
+		// Process the event with retry
+		err = retry.Do(func() error {
+			return PublishIssues(req.Context(), sonar, gh, webhook.Project.Key, webhook.Branch.Name)
+		}, retry.Delay(time.Minute), retry.Attempts(5))
 		if err != nil {
 			logrus.WithError(err).Errorln("Failed to publish issues for", webhook.Project.Key, webhook.Branch.Name)
 
