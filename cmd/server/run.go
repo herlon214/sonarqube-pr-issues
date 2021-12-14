@@ -67,7 +67,9 @@ func Run(cmd *cobra.Command, args []string) {
 
 	// Process queue
 	queue := make(chan func() error, 0)
-	go ProcessQueue(queue)
+	for i := 0; i < workers; i++ {
+		go ProcessQueue(queue)
+	}
 
 	// Listen
 	http.HandleFunc("/webhook", WebhookHandler(webhookSecret, sonar, gh, queue))
@@ -143,7 +145,7 @@ func WebhookHandler(webhookSecret string, sonar *sonarqube2.Sonarqube, gh scm2.S
 // if the request takes more than 10s Sonarqube shows the message 'Server Unreachable'
 func ProcessQueue(queue <-chan func() error) {
 	for fn := range queue {
-		err := retry.Do(fn, retry.Delay(time.Minute), retry.Attempts(5))
+		err := retry.Do(fn, retry.Delay(time.Minute), retry.DelayType(retry.FixedDelay), retry.Attempts(5))
 		if err != nil {
 			logrus.WithError(err).Errorln("Failed to process webhook")
 
