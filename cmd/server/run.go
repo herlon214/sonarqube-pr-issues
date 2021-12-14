@@ -128,7 +128,7 @@ func WebhookHandler(webhookSecret string, sonar *sonarqube2.Sonarqube, gh scm2.S
 		queue <- func() error {
 			logrus.Infoln("Processing", webhook.Project.Key, "->", webhook.Branch.Name)
 
-			if err := PublishIssues(req.Context(), sonar, gh, webhook.Project.Key, webhook.Branch.Name); err != nil {
+			if err := PublishIssues(context.Background(), sonar, gh, webhook.Project.Key, webhook.Branch.Name); err != nil {
 				return err
 			}
 
