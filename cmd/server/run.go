@@ -65,8 +65,12 @@ func Run(cmd *cobra.Command, args []string) {
 	sonar := sonarqube2.New(sonarRootURL, apiKey)
 	var gh scm2.SCM = scm2.NewGithub(ctx, sonar, ghToken)
 
+	// Process queue
+	queue := make(chan func() error, 0)
+	go ProcessQueue(queue)
+
 	// Listen
-	http.HandleFunc("/webhook", WebhookHandler(webhookSecret, sonar, gh))
+	http.HandleFunc("/webhook", WebhookHandler(webhookSecret, sonar, gh, queue))
 
 	logrus.Infoln("Listening on port", serverPort)
 	if err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil); err != nil {
@@ -74,7 +78,7 @@ func Run(cmd *cobra.Command, args []string) {
 	}
 }
 
-func WebhookHandler(webhookSecret string, sonar *sonarqube2.Sonarqube, gh scm2.SCM) http.HandlerFunc {
+func WebhookHandler(webhookSecret string, sonar *sonarqube2.Sonarqube, gh scm2.SCM, queue chan<- func() error) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		// Read webhook secret
 		reqSecret := req.Header.Get("X-Sonar-Webhook-HMAC-SHA256")
@@ -117,19 +121,34 @@ func WebhookHandler(webhookSecret string, sonar *sonarqube2.Sonarqube, gh scm2.S
 			return
 		}
 
-		logrus.Infoln("Processing", webhook.Project.Key, "->", webhook.Branch.Name)
+		// Add event to queue
+		logrus.Infoln("Adding to the queue", webhook.Project.Key, "->", webhook.Branch.Name)
+		queue <- func() error {
+			logrus.Infoln("Processing", webhook.Project.Key, "->", webhook.Branch.Name)
 
-		// Process the event with retry
-		err = retry.Do(func() error {
-			return PublishIssues(req.Context(), sonar, gh, webhook.Project.Key, webhook.Branch.Name)
-		}, retry.Delay(time.Minute), retry.Attempts(5))
+			if err := PublishIssues(req.Context(), sonar, gh, webhook.Project.Key, webhook.Branch.Name); err != nil {
+				return err
+			}
+
+			logrus.Infoln("Issues published for", webhook.Project.Key, webhook.Branch.Name)
+
+			return nil
+		}
+
+		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// ProcessQueue is made to process the webhooks in background
+// if the request takes more than 10s Sonarqube shows the message 'Server Unreachable'
+func ProcessQueue(queue <-chan func() error) {
+	for fn := range queue {
+		err := retry.Do(fn, retry.Delay(time.Minute), retry.Attempts(5))
 		if err != nil {
-			logrus.WithError(err).Errorln("Failed to publish issues for", webhook.Project.Key, webhook.Branch.Name)
+			logrus.WithError(err).Errorln("Failed to process webhook")
 
 			return
 		}
-
-		logrus.Infoln("Issues published for", webhook.Project.Key, webhook.Branch.Name)
 	}
 }
 
@@ -138,13 +157,13 @@ func PublishIssues(ctx context.Context, sonar *sonarqube2.Sonarqube, projectScm 
 	// Find PR
 	pr, err := sonar.FindPRForBranch(project, branch)
 	if err != nil {
-		return errors.Wrap(err, "failed to find PR for the given branch")
+		return errors.Wrap(err, fmt.Sprintf("failed to find PR for branch %s of the project %s", branch, project))
 	}
 
 	// List issues
 	issues, err := sonar.ListIssuesForPR(project, pr.Key)
 	if err != nil {
-		return errors.Wrap(err, "failed to list issues for the given PR")
+		return errors.Wrap(err, fmt.Sprintf("failed to list issues for the given PR branch %s of the project %s", branch, project))
 	}
 
 	// Filter issues
@@ -158,13 +177,13 @@ func PublishIssues(ctx context.Context, sonar *sonarqube2.Sonarqube, projectScm 
 	// Publish review
 	err = projectScm.PublishIssuesReviewFor(ctx, issues.Issues, pr)
 	if err != nil {
-		return errors.Wrap(err, "Failed to publish issues review")
+		return errors.Wrap(err, fmt.Sprintf("Failed to publish issues review for branch %s of the project %s", branch, project))
 	}
 
 	// Tag published issues
 	bulkActionRes, err := sonar.TagIssues(issues.Issues, sonarqube2.TAG_PUBLISHED)
 	if err != nil {
-		return errors.Wrap(err, "failed to mark issues as published")
+		return errors.Wrap(err, fmt.Sprintf("failed to mark issues as published for branch %s of the project %s", branch, project))
 	}
 
 	logrus.Infoln("--------------------------")
