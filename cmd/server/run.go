@@ -148,8 +148,6 @@ func ProcessQueue(queue <-chan func() error) {
 		err := retry.Do(fn, retry.Delay(time.Minute), retry.DelayType(retry.FixedDelay), retry.Attempts(5))
 		if err != nil {
 			logrus.WithError(err).Errorln("Failed to process webhook")
-
-			return
 		}
 	}
 }
