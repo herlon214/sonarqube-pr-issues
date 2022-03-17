@@ -1,7 +1,7 @@
 # :robot: Sonarqube PR Issues Review
 [![Build Status][ci-img]][ci] [![Coverage Status][cov-img]][cov] [![Go Report Card][report-card-img]][report-card]
 
-Simple Webhook for Sonarqube which publishes the issues found in the PR as review requesting changes.
+Simple Webhook for Sonarqube which publishes the issues found in the PR.
 
 
 ![Review screenshot](assets/review_screenshot.png) 
