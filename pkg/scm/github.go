@@ -44,7 +44,7 @@ func NewGithub(ctx context.Context, sonar *sonarqube.Sonarqube, token string) *G
 
 // PublishIssuesReviewFor publishes a review with a comment for each issue
 func (g *Github) PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.Issue, pr *sonarqube.PullRequest) error {
-	event := "REQUEST_CHANGES"
+	event := "COMMENT"
 	comments := make([]*github.DraftReviewComment, 0)
 
 	// Create a comment for each issue
