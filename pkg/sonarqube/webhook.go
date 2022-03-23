@@ -7,5 +7,6 @@ type WebhookData struct {
 	} `json:"project"`
 	Branch struct {
 		Name string `json:"name"`
+		Type string `json:"type"`
 	} `json:"branch"`
 }

@@ -128,7 +128,7 @@ func WebhookHandler(webhookSecret string, sonar *sonarqube2.Sonarqube, gh scm2.S
 		queue <- func() error {
 			logrus.Infoln("Processing", webhook.Project.Key, "->", webhook.Branch.Name)
 
-			if err := PublishIssues(context.Background(), sonar, gh, webhook.Project.Key, webhook.Branch.Name); err != nil {
+			if err := PublishIssues(context.Background(), sonar, gh, webhook.Project.Key, webhook.Branch.Name, webhook.Branch.Type); err != nil {
 				return err
 			}
 
@@ -153,11 +153,20 @@ func ProcessQueue(queue <-chan func() error) {
 }
 
 // PublishIssues publishes the issues in the PR for the given project branch
-func PublishIssues(ctx context.Context, sonar *sonarqube2.Sonarqube, projectScm scm2.SCM, project string, branch string) error {
+func PublishIssues(ctx context.Context, sonar *sonarqube2.Sonarqube, projectScm scm2.SCM, project string, branch string, branchType string) error {
 	// Find PR
-	pr, err := sonar.FindPRForBranch(project, branch)
-	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("failed to find PR for branch %s of the project %s", branch, project))
+	var pr *sonarqube2.PullRequest
+	var err error
+	if branchType == sonarqube2.BRANCH_TYPE_PULL_REQUEST {
+		pr, err = sonar.FindPRForKey(project, branch)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to find PR for key %s of the project %s", branch, project))
+		}
+	} else {
+		pr, err = sonar.FindPRForBranch(project, branch)
+		if err != nil {
+			return errors.Wrap(err, fmt.Sprintf("failed to find PR for branch %s of the project %s", branch, project))
+		}
 	}
 
 	// List issues
@@ -175,7 +184,7 @@ func PublishIssues(ctx context.Context, sonar *sonarqube2.Sonarqube, projectScm 
 	}
 
 	// Publish review
-	err = projectScm.PublishIssuesReviewFor(ctx, issues.Issues, pr)
+	err = projectScm.PublishIssuesReviewFor(ctx, issues.Issues, pr, requestChanges)
 	if err != nil {
 		return errors.Wrap(err, fmt.Sprintf("Failed to publish issues review for branch %s of the project %s", branch, project))
 	}

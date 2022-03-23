@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	TAG_PUBLISHED = "published"
+	TAG_PUBLISHED            = "published"
+	BRANCH_TYPE_PULL_REQUEST = "PULL_REQUEST"
 )
 
 type BulkActionResponse struct {
@@ -75,6 +76,24 @@ func (s *Sonarqube) ProjectPullRequests(projectId string) (*ProjectPullRequests,
 	}
 
 	return &data, nil
+}
+
+// FindPRForKey searches the pull request for the given project and key
+func (s *Sonarqube) FindPRForKey(project string, key string) (*PullRequest, error) {
+	// Fetch project pull requests
+	pullRequests, err := s.ProjectPullRequests(project)
+	if err != nil {
+		return nil, err
+	}
+
+	// Filter by key
+	for _, item := range pullRequests.PullRequests {
+		if item.Key == key {
+			return &item, nil
+		}
+	}
+
+	return nil, errors.New("not found")
 }
 
 // FindPRForBranch searches the pull request for the given project and branch

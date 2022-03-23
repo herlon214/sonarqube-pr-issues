@@ -42,6 +42,27 @@ func TestSonarqubeProjectPRs(t *testing.T) {
 	assert.Equal(t, "https://github.com/myorg/myproject/pull/2", prs.PullRequests[1].URL)
 }
 
+func TestSonarqubeFindPRForKey(t *testing.T) {
+	// Mock response
+	expected := `{"pullRequests":[{"key":"3","title":"Feat/newtest","branch":"feat/newtest","base":"feat/mvp","status":{"qualityGateStatus":"ERROR","bugs":2,"vulnerabilities":0,"codeSmells":0},"analysisDate":"2021-12-04T15:44:18+0000","url":"https://github.com/myorg/myproject/pull/3","target":"feat/mvp"},{"key":"2","title":"test PR","branch":"feat/test","base":"feat/mvp","status":{"qualityGateStatus":"ERROR","bugs":1,"vulnerabilities":0,"codeSmells":2},"analysisDate":"2021-12-03T18:10:59+0000","url":"https://github.com/myorg/myproject/pull/2","target":"feat/mvp"}]}`
+	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(expected))
+	}))
+	defer svr.Close()
+
+	// New sonar
+	sonar := New(svr.URL, "myapikey")
+
+	// Read PRs
+	pr, err := sonar.FindPRForKey("myproject", "2")
+	assert.NoError(t, err)
+
+	assert.NotNil(t, pr)
+	assert.Equal(t, "feat/test", pr.Branch)
+	assert.Equal(t, "2", pr.Key)
+	assert.Equal(t, "https://github.com/myorg/myproject/pull/2", pr.URL)
+}
+
 func TestSonarqubeFindPRForBranch(t *testing.T) {
 	// Mock response
 	expected := `{"pullRequests":[{"key":"3","title":"Feat/newtest","branch":"feat/newtest","base":"feat/mvp","status":{"qualityGateStatus":"ERROR","bugs":2,"vulnerabilities":0,"codeSmells":0},"analysisDate":"2021-12-04T15:44:18+0000","url":"https://github.com/myorg/myproject/pull/3","target":"feat/mvp"},{"key":"2","title":"test PR","branch":"feat/test","base":"feat/mvp","status":{"qualityGateStatus":"ERROR","bugs":1,"vulnerabilities":0,"codeSmells":2},"analysisDate":"2021-12-03T18:10:59+0000","url":"https://github.com/myorg/myproject/pull/2","target":"feat/mvp"}]}`
