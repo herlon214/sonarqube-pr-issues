@@ -7,5 +7,5 @@ import (
 )
 
 type SCM interface {
-	PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.Issue, pr *sonarqube.PullRequest) error
+	PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.Issue, pr *sonarqube.PullRequest, requestChanges bool) error
 }

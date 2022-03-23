@@ -89,7 +89,7 @@ func Run(cmd *cobra.Command, args []string) {
 		var gh scm2.SCM = scm2.NewGithub(ctx, sonar, ghToken)
 
 		// Publish review
-		err = gh.PublishIssuesReviewFor(ctx, issues.Issues, pr)
+		err = gh.PublishIssuesReviewFor(ctx, issues.Issues, pr, requestChanges)
 		if err != nil {
 			logrus.WithError(err).Panicln("Failed to publish issues review")
 

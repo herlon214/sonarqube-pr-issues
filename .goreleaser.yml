@@ -20,6 +20,6 @@ dockers:
   - goos: linux
     goarch: amd64
     image_templates:
-      - "jamf/sonarqube-pr-issues:latest"
-      - "jamf/sonarqube-pr-issues:{{ .Tag }}"
-      - "jamf/sonarqube-pr-issues:v{{ .Major }}"
+      - "herlon214/sonarqube-pr-issues:latest"
+      - "herlon214/sonarqube-pr-issues:{{ .Tag }}"
+      - "herlon214/sonarqube-pr-issues:v{{ .Major }}"

@@ -14,6 +14,11 @@ import (
 	"github.com/herlon214/sonarqube-pr-issues/pkg/sonarqube"
 )
 
+const (
+	REVIEW_EVENT_COMMENT         = "COMMENT"
+	REVIEW_EVENT_REQUEST_CHANGES = "REQUEST_CHANGES"
+)
+
 type Github struct {
 	client *github.Client
 	sonar  *sonarqube.Sonarqube
@@ -43,8 +48,14 @@ func NewGithub(ctx context.Context, sonar *sonarqube.Sonarqube, token string) *G
 }
 
 // PublishIssuesReviewFor publishes a review with a comment for each issue
-func (g *Github) PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.Issue, pr *sonarqube.PullRequest) error {
-	event := "COMMENT"
+func (g *Github) PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.Issue, pr *sonarqube.PullRequest, requestChanges bool) error {
+	var reviewEvent string
+	if requestChanges {
+		reviewEvent = REVIEW_EVENT_REQUEST_CHANGES
+	} else {
+		reviewEvent = REVIEW_EVENT_COMMENT
+	}
+
 	comments := make([]*github.DraftReviewComment, 0)
 
 	// Create a comment for each issue
@@ -67,7 +78,7 @@ func (g *Github) PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.
 
 	reviewRequest := &github.PullRequestReviewRequest{
 		Body:     &body,
-		Event:    &event,
+		Event:    &reviewEvent,
 		Comments: comments,
 	}
 
