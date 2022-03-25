@@ -55,7 +55,10 @@ Available Commands:
   run         Starts the webhook server
 
 Flags:
-  -h, --help   help for server
+  -h, --help              help for server
+  -p, --port int          Server port (default 8080)
+      --request-changes   When issue is found, mark PR as changes requested (default true)
+  -w, --workers int       Workers count (default 30)
 
 Use "sqpr server [command] --help" for more information about a command.
 ```
@@ -106,11 +109,12 @@ Available Commands:
   run         Process the given project and branch
 
 Flags:
-      --branch string    SCM branch name (default "my-branch")
-  -h, --help             help for cli
-      --mark             Mark the issue as published to avoid sending it again
-      --project string   Sonarqube project name (default "my-project")
-      --publish          Publish review in the SCM
+      --branch string     SCM branch name (default "my-branch")
+  -h, --help              help for cli
+      --mark              Mark the issue as published to avoid sending it again
+      --project string    Sonarqube project name (default "my-project")
+      --publish           Publish review in the SCM
+      --request-changes   When issue is found, mark PR as changes requested (default true)
 
 Use "sqpr cli [command] --help" for more information about a command.
 ```
