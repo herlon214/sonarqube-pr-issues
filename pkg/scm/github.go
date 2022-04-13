@@ -70,7 +70,7 @@ func (g *Github) PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.
 	}
 
 	// Fetch PR diffs
-	ghDiff, _, err := g.client.PullRequests.GetRaw(ctx, ghPath.Owner, ghPath.Repo, prNumber, github.RawOptions{github.Diff})
+	ghDiff, _, err := g.client.PullRequests.GetRaw(ctx, ghPath.Owner, ghPath.Repo, prNumber, github.RawOptions{Type: github.Diff})
 	if err != nil {
 		return errors.Wrap(err, "failed to get raw PR")
 	}
@@ -122,7 +122,7 @@ func (g *Github) PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.
 	}
 
 	if len(comments) == 0 {
-		return errors.Wrap(err, "failed to find relevant issues")
+		return errors.New("failed to find relevant issues")
 	}
 
 	body := fmt.Sprintf(`:wave: Hey, I added %d comments about your changes, please take a look :slightly_smiling_face:`, len(issues))
