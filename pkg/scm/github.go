@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-github/v41/github"
 	"github.com/pkg/errors"
+	"github.com/sourcegraph/go-diff/diff"
 	"golang.org/x/oauth2"
 
 	"github.com/herlon214/sonarqube-pr-issues/pkg/sonarqube"
@@ -56,32 +57,6 @@ func (g *Github) PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.
 		reviewEvent = REVIEW_EVENT_COMMENT
 	}
 
-	comments := make([]*github.DraftReviewComment, 0)
-
-	// Create a comment for each issue
-	for _, issue := range issues {
-		side := "RIGHT"
-		message := issue.MarkdownMessage(g.sonar.Root)
-		filePath := issue.FilePath()
-		line := issue.Line
-
-		comment := &github.DraftReviewComment{
-			Path: &filePath,
-			Body: &message,
-			Side: &side,
-			Line: &line,
-		}
-		comments = append(comments, comment)
-	}
-
-	body := fmt.Sprintf(`:wave: Hey, I added %d comments about your changes, please take a look :slightly_smiling_face:`, len(issues))
-
-	reviewRequest := &github.PullRequestReviewRequest{
-		Body:     &body,
-		Event:    &reviewEvent,
-		Comments: comments,
-	}
-
 	// Convert PR number into int
 	prNumber, err := strconv.Atoi(pr.Key)
 	if err != nil {
@@ -94,13 +69,75 @@ func (g *Github) PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.
 		return errors.Wrap(err, "failed to parse github path")
 	}
 
+	// Fetch PR diffs
+	ghDiff, _, err := g.client.PullRequests.GetRaw(ctx, ghPath.Owner, ghPath.Repo, prNumber, github.RawOptions{Type: github.Diff})
+	if err != nil {
+		return errors.Wrap(err, "failed to get raw PR")
+	}
+
+	// Parse diffs
+	fileDiffs, err := diff.ParseMultiFileDiff([]byte(ghDiff))
+	if err != nil {
+		return errors.Wrap(err, "failed to parse diff")
+	}
+
+	diffMap := make(map[string][]*diff.Hunk)
+	for i := range fileDiffs {
+		fileName := fileDiffs[i].OrigName[2:]
+		diffMap[fileName] = fileDiffs[i].Hunks
+	}
+
+	comments := make([]*github.DraftReviewComment, 0)
+
+	// Create a comment for each issue
+	for _, issue := range issues {
+		side := "RIGHT"
+		message := issue.MarkdownMessage(g.sonar.Root)
+		filePath := issue.FilePath()
+		lineNumber := issue.Line
+
+		// Skip if current issue is not part of the PR diff
+		hunks, ok := diffMap[filePath]
+		if !ok {
+			continue
+		}
+
+		for _, hunk := range hunks {
+			if lineNumber < int(hunk.OrigStartLine) || lineNumber < int(hunk.NewStartLine) {
+				continue
+			}
+			if lineNumber > int(hunk.OrigStartLine+hunk.OrigLines) || lineNumber > int(hunk.NewStartLine+hunk.NewLines) {
+				continue
+			}
+
+			comment := &github.DraftReviewComment{
+				Path: &filePath,
+				Body: &message,
+				Side: &side,
+				Line: &lineNumber,
+			}
+			comments = append(comments, comment)
+		}
+
+	}
+
+	if len(comments) == 0 {
+		return errors.New("failed to find relevant issues")
+	}
+
+	body := fmt.Sprintf(`:wave: Hey, I added %d comments about your changes, please take a look :slightly_smiling_face:`, len(issues))
+
+	reviewRequest := &github.PullRequestReviewRequest{
+		Body:     &body,
+		Event:    &reviewEvent,
+		Comments: comments,
+	}
+
 	// Create the review
-	out, res, err := g.client.PullRequests.CreateReview(ctx, ghPath.Owner, ghPath.Repo, prNumber, reviewRequest)
+	_, _, err = g.client.PullRequests.CreateReview(ctx, ghPath.Owner, ghPath.Repo, prNumber, reviewRequest)
 	if err != nil {
 		return errors.Wrap(err, "failed to create review")
 	}
-
-	fmt.Println(out, res)
 
 	return nil
 }
