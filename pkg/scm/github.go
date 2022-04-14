@@ -125,7 +125,7 @@ func (g *Github) PublishIssuesReviewFor(ctx context.Context, issues []sonarqube.
 		return errors.New("failed to find relevant issues")
 	}
 
-	body := fmt.Sprintf(`:wave: Hey, I added %d comments about your changes, please take a look :slightly_smiling_face:`, len(issues))
+	body := fmt.Sprintf(`:wave: Hey, I added %d comments about your changes, please take a look :slightly_smiling_face:`, len(comments))
 
 	reviewRequest := &github.PullRequestReviewRequest{
 		Body:     &body,
